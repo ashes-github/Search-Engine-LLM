@@ -28,7 +28,7 @@ arxiv = ArxivQueryRun(api_wrapper=arxiv_wrapper)
 api_wrapper = WikipediaAPIWrapper(top_k_results=1, doc_content_chars_max=200)
 wiki = WikipediaQueryRun(api_wrapper=api_wrapper)
 
-ddg_search = DuckDuckGoSearchResults()
+ddg_search = DuckDuckGoSearchRun()
 
 ########
 
@@ -71,7 +71,17 @@ Try more LangChain 🤝 Streamlit Agent examples at [github.com/langchain-ai/str
 st.sidebar.title("Settings")
 
 # api_key = os.getenv("GROQ_API_KEY")
-api_key = os.getenv("OPENAI_API_KEY")
+
+try:
+    api_key = st.secrets["OPENAI_API_KEY"]
+
+except Exception:
+    api_key = os.getenv("OPENAI_API_KEY")
+
+
+if not api_key:
+    st.error("OPENAI_API_KEY not found")
+    st.stop()
 
 llm_groq = ChatGroq(
     groq_api_key=api_key,
