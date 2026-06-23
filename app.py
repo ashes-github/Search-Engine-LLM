@@ -72,12 +72,15 @@ st.sidebar.title("Settings")
 
 # api_key = os.getenv("GROQ_API_KEY")
 
-try:
-    api_key = st.secrets["OPENAI_API_KEY"]
 
-except Exception:
-    api_key = os.getenv("OPENAI_API_KEY")
+def get_secret(key):
+    try:
+        return st.secrets[key]
+    except Exception:
+        return os.getenv(key)
 
+
+api_key = get_secret("OPENAI_API_KEY")
 
 if not api_key:
     st.error("OPENAI_API_KEY not found")
