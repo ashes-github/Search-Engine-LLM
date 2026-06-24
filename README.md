@@ -8,3 +8,5 @@ colorTo: yellow
 short_description: Search Engine with LLM
 sdk_version: 1.58.0
 ---
+
+## Deployed App Url in Huggingface domain: https://huggingface.co/spaces/ashes-hug/Search_Engine_llm 
