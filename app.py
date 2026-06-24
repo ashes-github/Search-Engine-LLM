@@ -68,7 +68,17 @@ def wikipedia_search(query: str) -> str:
     Do NOT use for latest news or current events.
     """
     logger.info(f"Wikipedia tool called: {query}")
-    return wiki.run(query)
+
+    try:
+        result = wiki.run(query)
+        return result
+
+    except Exception as e:
+        logger.exception("Wikipedia search failed")
+        return (
+            "Wikipedia search failed temporarily. "
+            "Try another source or answer from general knowledge"
+        )
 
 
 @tool
@@ -83,7 +93,12 @@ def web_search(query: str) -> str:
     - information after knowledge cutoff
     """
     logger.info(f"Web search tool called: {query}")
-    return ddg_search.run(query)
+    try:
+        result = ddg_search.run(query)
+        return result[:4000]
+    except Exception as e:
+        logger.exception("Web search failed!")
+        return "Web search unavailable"
 
 
 st.title("🔎 LangChain - Chat with search")
