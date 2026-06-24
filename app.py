@@ -6,7 +6,6 @@ from langchain_community.tools import (
     ArxivQueryRun,
     WikipediaQueryRun,
     DuckDuckGoSearchRun,
-    DuckDuckGoSearchResults,
 )
 from langchain.tools import tool
 from langchain_core.messages import HumanMessage, AIMessage
@@ -18,6 +17,8 @@ from transformers.utils import logging as util_log
 from langchain_core.utils.uuid import uuid7
 import traceback
 import logging
+from tenacity import retry, stop_after_attempt, wait_exponential, before_sleep_log
+from utils.tool_handler import safe_tool_call
 
 load_dotenv()
 util_log.set_verbosity_error()
@@ -53,6 +54,29 @@ def arxiv_search(query: str) -> str:
     return arxiv.run(query)
 
 
+# -------------------
+# Retry pattern
+# --------------------
+
+
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=2, max=8),
+    before_sleep=before_sleep_log(logger, logging.WARNING),
+)
+def wikipedia_call(query: str) -> str:
+    return wiki.run(query)
+
+
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=2, max=8),
+    before_sleep=before_sleep_log(logger, logging.WARNING),
+)
+def web_call(query: str) -> str:
+    return ddg_search.run(query)[:4000]
+
+
 @tool
 def wikipedia_search(query: str) -> str:
     """
@@ -67,18 +91,7 @@ def wikipedia_search(query: str) -> str:
 
     Do NOT use for latest news or current events.
     """
-    logger.info(f"Wikipedia tool called: {query}")
-
-    try:
-        result = wiki.run(query)
-        return result
-
-    except Exception as e:
-        logger.exception("Wikipedia search failed")
-        return (
-            "Wikipedia search failed temporarily. "
-            "Try another source or answer from general knowledge"
-        )
+    return safe_tool_call("Wikipedia", wikipedia_call, query)
 
 
 @tool
@@ -92,13 +105,7 @@ def web_search(query: str) -> str:
     - current facts
     - information after knowledge cutoff
     """
-    logger.info(f"Web search tool called: {query}")
-    try:
-        result = ddg_search.run(query)
-        return result[:4000]
-    except Exception as e:
-        logger.exception("Web search failed!")
-        return "Web search unavailable"
+    return safe_tool_call("Web search", web_call, query)
 
 
 st.title("🔎 LangChain - Chat with search")
